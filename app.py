@@ -8,7 +8,7 @@ def init_config() -> None:
     """
     # Shared page config
     st.set_page_config(
-        page_title="EM-VIEW",
+        page_title="Global Disaster Risk Dashboard",
         page_icon=":material/globe:",
         layout='wide',
         menu_items={

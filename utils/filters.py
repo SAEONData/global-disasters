@@ -7,20 +7,15 @@ CLASSIF_KEY_DOC_URI = (
     f"#main-classification-tree"
 )
 
-
 def init_sidebar_filters() -> None:
     """Initialize sidebar filters."""
     ss = st.session_state
 
-    # Not having session states mean that data has not been uploaded and that
-    # filters should be disabled.
+    # If no data, disable filters
     filters_disabled = "data" not in ss
 
-    # Set default if data
     if not filters_disabled:
-
-        # Initialize filters once enabled
-        if "filter.disabled" not in st.session_state:
+        if "filter.disabled" not in ss:
             set_filters_to_default()
 
         col1, col2 = st.sidebar.columns(2)
@@ -82,69 +77,67 @@ def init_sidebar_filters() -> None:
 
 
 def process_region() -> None:
-    """Process region and update other levels accordingly."""
+    """Update subregion and country options based on selected region."""
     ss = st.session_state
     rd = ss['region_data']
     region = ss['filter.region']
     subregion = ss['filter.subregion']
     country = ss['filter.country']
+
     if region:
         valid_data = rd[rd['region'] == region]
-        if subregion not in valid_data['subregion']:
+        if subregion not in valid_data['subregion'].values:
             ss['filter.subregion'] = None
-        if country not in valid_data['country']:
+        if country not in valid_data['country'].values:
             ss['filter.country'] = None
-        ss['subregion_list'] = [None] + sorted(valid_data['subregion'].unique())
-        ss['country_list'] = [None] + sorted(valid_data['country'].unique())
+        ss['subregion_list'] = [None] + sorted(valid_data['subregion'].dropna().unique())
+        ss['country_list'] = [None] + sorted(valid_data['country'].dropna().unique())
     else:
         ss['filter.subregion'] = None
         ss['filter.country'] = None
-        ss['subregion_list'] = [None] + sorted(rd['subregion'].unique())
-        ss['country_list'] = [None] + sorted(rd['country'].unique())
+        ss['subregion_list'] = [None] + sorted(rd['subregion'].dropna().unique())
+        ss['country_list'] = [None] + sorted(rd['country'].dropna().unique())
 
 def process_subregion() -> None:
-    """Process subregion and update other levels accordingly."""
+    """Update region and country options based on selected subregion."""
     ss = st.session_state
     rd = ss['region_data']
     region = ss['filter.region']
     subregion = ss['filter.subregion']
     country = ss['filter.country']
+
     if subregion:
         valid_data = rd[rd['subregion'] == subregion]
-        if region not in valid_data['region']:
+        if region not in valid_data['region'].values:
             ss['filter.region'] = valid_data.iloc[0]['region']
-        if country not in valid_data['country']:
+        if country not in valid_data['country'].values:
             ss['filter.country'] = None
-        ss['country_list'] = [None] + sorted(valid_data['country'].unique())
+        ss['country_list'] = [None] + sorted(valid_data['country'].dropna().unique())
     else:
         ss['filter.country'] = None
         if region:
             valid_data = rd[rd['region'] == region]
-            ss['country_list'] = [None] + sorted(valid_data['country'].unique())
+            ss['country_list'] = [None] + sorted(valid_data['country'].dropna().unique())
         else:
-            ss['country_list'] = [None] + sorted(rd['country'].unique())
-
+            ss['country_list'] = [None] + sorted(rd['country'].dropna().unique())
 
 def process_country() -> None:
-    """Process country and update other levels accordingly."""
+    """Update region and subregion based on selected country."""
     ss = st.session_state
     rd = ss['region_data']
-    region = ss['filter.region']
-    subregion = ss['filter.subregion']
     country = ss['filter.country']
+
     if country:
         valid_data = rd[rd['country'] == country]
-        if region not in valid_data['region']:
+        if not valid_data.empty:
             ss['filter.region'] = valid_data.iloc[0]['region']
-        if subregion not in valid_data['subregion']:
             ss['filter.subregion'] = valid_data.iloc[0]['subregion']
 
-
 def get_filtered_data() -> pd.DataFrame:
-    """Get filtered data based on filters session states"""
+    """Return a filtered view of the data based on current filters."""
     ss = st.session_state
 
-    # Get filters states
+    # Get current filters
     start = ss["filter.start"]
     end = ss["filter.end"]
     classification_key = ss["filter.classification_key"].strip()
@@ -152,41 +145,42 @@ def get_filtered_data() -> pd.DataFrame:
     subregion = ss["filter.subregion"]
     country = ss["filter.country"]
 
-    # Initiate filtering
+    # Filter data
     data_filtered = ss['data'].copy()
 
-    # Filter by year
+    # Year filter
     data_filtered = data_filtered[
-        (data_filtered['Start Year'] >= start) &
-        (data_filtered['End Year'] <= end)
-        ]
-
-    # Filter by classification key
-    data_filtered = data_filtered[
-        data_filtered['Classification Key'].str.match(
-            classification_key.replace('*', '.*')
-        )
+        (data_filtered['start_year'] >= start) & (data_filtered['end_year'] <= end)
     ]
 
-    # Filter by region, subregion, country
+    # Classification key filter (wildcard matching)
+    if classification_key:
+        data_filtered = data_filtered[
+            data_filtered['classification_key'].str.contains(
+                classification_key.replace('*', '.*'), regex=True, na=False
+            )
+        ]
+
+    # Region/Subregion/Country filters
     if region:
-        data_filtered = data_filtered[data_filtered['Region'] == region]
+        data_filtered = data_filtered[data_filtered['region'] == region]
     if subregion:
-        data_filtered = data_filtered[data_filtered['Subregion'] == subregion]
+        data_filtered = data_filtered[data_filtered['subregion'] == subregion]
     if country:
-        data_filtered = data_filtered[data_filtered['Country'] == country]
+        data_filtered = data_filtered[data_filtered['country'] == country]
 
     return data_filtered
 
-
 def set_filters_to_default() -> None:
-    """Set or reset filters to default values"""
+    """Reset filters to default full dataset."""
     ss = st.session_state
     data = ss["data"]
     rd = ss['region_data']
+
     ss['filter.disabled'] = False
-    year_min = data['Start Year'].min()
-    year_max = data['Start Year'].max()
+    year_min = int(data['start_year'].min())
+    year_max = int(data['start_year'].max())
+
     ss['filter.year_min'] = year_min
     ss['filter.year_max'] = year_max
     ss['filter.start'] = year_min
@@ -194,6 +188,7 @@ def set_filters_to_default() -> None:
     ss['filter.region'] = None
     ss['filter.subregion'] = None
     ss['filter.country'] = None
-    ss['region_list'] = [None] + sorted(rd['region'].unique())
-    ss['subregion_list'] = [None] + sorted(rd['subregion'].unique())
-    ss['country_list'] = [None] + sorted(rd['country'].unique())
+
+    ss['region_list'] = [None] + sorted(rd['region'].dropna().unique())
+    ss['subregion_list'] = [None] + sorted(rd['subregion'].dropna().unique())
+    ss['country_list'] = [None] + sorted(rd['country'].dropna().unique())

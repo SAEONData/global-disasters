@@ -3,25 +3,28 @@ import streamlit as st
 from utils.filters import get_filtered_data
 from utils.layout import PAGE_HELP_TEXT
 
+# Default columns for table view - use Postgres field names
 DEFAULT_COLUMNS = [
-    "DisNo.",
-    "Country",
-    "Disaster Type",
-    "Total Deaths",
-    "Total Affected",
-    "Total Damage, Adjusted ('000 US$)"
+    "disno",
+    "country",
+    "disaster_type",
+    "total_deaths",
+    "total_affected",
+    "total_damage_adjusted_usd_thousands"
 ]
 
-# Update default style to format years without thousands separators
+# Format numbers for start and end years
 DEFAULT_STYLE = {
-    "Start Year": '{:.0f}',
-    "End Year": '{:.0f}'
+    "start_year": '{:.0f}',
+    "end_year": '{:.0f}'
 }
 
+# Set page
 st.session_state["page"] = "table"
 
+# Check if data is loaded
 if "data" not in st.session_state:
-    st.error('Please, upload your dataset first on the main page', icon="🚨")
+    st.error('No disaster data available. Please check database connection.', icon="🚨")
 else:
     data = get_filtered_data()
 
@@ -32,6 +35,7 @@ else:
     )
 
     display_rows = 15
+
     st.dataframe(
         data[columns].style.format(
             DEFAULT_STYLE,
@@ -41,8 +45,7 @@ else:
         height=(display_rows + 1) * 35 + 3,
         use_container_width=True
     )
+
     # Page Help
-    # ---------
-    with st.expander("See page details", expanded=False,
-                     icon=':material/info:'):
+    with st.expander("See page details", expanded=False, icon=':material/info:'):
         st.markdown(PAGE_HELP_TEXT[st.session_state.page])

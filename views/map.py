@@ -18,38 +18,39 @@ COLORMAPS = [
     'rdylgn', 'redor', 'reds', 'solar', 'spectral', 'speed', 'sunset',
     'sunsetdark', 'teal', 'tealgrn', 'tealrose', 'tempo', 'temps', 'thermal',
     'tropic', 'turbid', 'turbo', 'twilight', 'viridis', 'ylgn', 'ylgnbu',
-    'ylorbr', 'ylorrd']
+    'ylorbr', 'ylorrd'
+]
 
 VAR_DICT = {
     'count': 'N° Count',
     'death': 'Total Deaths',
     'affected': 'Total Affected',
-    'damage': "Total Damage, Adjusted ('000 US$)"
+    'damage': "Total Damage (USD Thousands)"
 }
 TITLE_DICT = {
     'count': 'Number of Disasters per Country',
     'death': 'Total Deaths per Country',
     'affected': 'Total Affected per Country',
-    'damage': "Total Damage per Country (in '000 of US$)"
+    'damage': "Total Damage per Country (in Thousands USD)"
 }
+
+# Set current page
 st.session_state["page"] = "map"
 
+# Check if data is loaded
 if "data" not in st.session_state:
-    st.error('Please, upload your dataset first on the main page', icon="🚨")
+    st.error('No disaster data available. Please check database connection.', icon="🚨")
 else:
-    # Data & period
     data = get_filtered_data()
-    year_min = data['Start Year'].min()
-    year_max = data['End Year'].max()
-    if year_min < year_max:
-        period = f"{year_min}-{year_max}"
-    else:
-        period = f"{year_min}"
 
-    if st.session_state['filter.country'] is not None:
-        st.error('Mapping tool cannot be set for one single country', icon="🚨")
-    else:
+    # Data & period
+    year_min = int(data['start_year'].min())
+    year_max = int(data['end_year'].max())
+    period = f"{year_min}-{year_max}" if year_min < year_max else f"{year_min}"
 
+    if st.session_state.get('filter.country') is not None:
+        st.error('Mapping tool cannot be set for one single country.', icon="🚨")
+    else:
         # Controls
         row0_cols = st.columns(3, vertical_alignment="center")
         row1_cols = st.columns([1,1,1,3], vertical_alignment="center")
@@ -68,16 +69,13 @@ else:
             ['Total', 'Yearly Average', 'Yearly Median']
         )
         custom = row1_cols[3].toggle('Custom Color Scale', value=False)
-        land_color = row1_cols[0].color_picker(
-            label='No Data',
-            value='#dddddd'
-        )
+        land_color = row1_cols[0].color_picker('No Data', value='#dddddd')
+
         if not custom:
             cmap = row1_cols[1].selectbox(
                 "Color Scale", COLORMAPS, index=COLORMAPS.index('amp')
             )
             reversed = row1_cols[2].toggle('Reversed Scale', value=True)
-
             if reversed:
                 cmap += '_r'
         else:
@@ -85,52 +83,44 @@ else:
             bottom_color = row1_cols[2].color_picker('Bottom Color', '#ffffff')
             cmap = generate_colorscale(bottom_color, top_color)
 
-        # Map
-
+        # Aggregate annually
         annual_data = data.groupby(
-            ['Country', 'Region', 'ISO', 'Start Year']).agg(
-            count=('ISO', 'count'),  # Counting occurrences per year
-            death=('Total Deaths', 'sum'),  # Summing deaths per year
-            affected=('Total Affected', 'sum'),  # Summing affected per year
-            damage=("Total Damage, Adjusted ('000 US$)", 'sum')
-            # Summing damage per year
+            ['country', 'region', 'iso', 'start_year']
+        ).agg(
+            count=('iso', 'count'),
+            death=('total_deaths', 'sum'),
+            affected=('total_affected', 'sum'),
+            damage=('total_damage_adjusted_usd_thousands', 'sum')
         ).reset_index()
 
         if aggregator == 'Total':
-            data_map = annual_data.groupby(['Country', 'Region', 'ISO']).agg(
+            data_map = annual_data.groupby(['country', 'region', 'iso']).agg(
                 count=('count', 'sum'),
                 death=('death', 'sum'),
                 affected=('affected', 'sum'),
                 damage=('damage', 'sum')
             ).reset_index()
         elif aggregator == 'Yearly Average':
-            data_map = annual_data.groupby(['Country', 'Region', 'ISO']).agg(
+            data_map = annual_data.groupby(['country', 'region', 'iso']).agg(
                 count=('count', 'mean'),
                 death=('death', 'mean'),
                 affected=('affected', 'mean'),
                 damage=('damage', 'mean')
             ).reset_index()
         elif aggregator == 'Yearly Median':
-            data_map = annual_data.groupby(['Country', 'Region', 'ISO']).agg(
+            data_map = annual_data.groupby(['country', 'region', 'iso']).agg(
                 count=('count', 'median'),
                 death=('death', 'median'),
                 affected=('affected', 'median'),
                 damage=('damage', 'median')
             ).reset_index()
 
-        data_map = data_map.merge(
-            st.session_state['data'].groupby(
-                ['Country', 'Region', 'ISO']).count().reset_index()[
-                ['Country', 'Region', 'ISO']]
-            , how='outer').fillna(0)
-
-        # Create Choropleth map
-
+        # Map Plot
         fig = go.Figure(
             data=go.Choropleth(
-                locations=data_map["ISO"],
+                locations=data_map["iso"],
                 z=data_map[variable],
-                text=data_map["Country"],
+                text=data_map["country"],
                 colorscale=cmap,
                 autocolorscale=False,
                 reversescale=True,
@@ -160,21 +150,11 @@ else:
                 showcoastlines=False,
                 projection_type='equirectangular',
                 scope=scope
-            ),
-            annotations=[dict(
-                x=1,
-                y=0.,
-                xref='paper',
-                yref='paper',
-                text=f"Source: {st.session_state['metadata']['Source:']}",
-                showarrow=False
-            )]
+            )
         )
 
         st.plotly_chart(fig, use_container_width=True)
 
         # Page Help
-        # ---------
-        with st.expander("See page details", expanded=False,
-                         icon=':material/info:'):
+        with st.expander("See page details", expanded=False, icon=':material/info:'):
             st.markdown(PAGE_HELP_TEXT[st.session_state.page])

@@ -8,12 +8,10 @@ PAGE_HELP_TEXT = {
     occurrence and impact**. 
     1. EM-DAT data is freely accessible for non-commercial use after 
     registration at [public.emdat.be](https://public.emdat.be). 
-    2. Uploading your EM-DAT data file (:point_down: below).
-    3. Use the **EM-VIEW** pages (:point_left: sidebar) to access summary 
+    2. Use the **EM-VIEW** pages (:point_left: sidebar) to access summary 
     statistics, tabular data, maps, and time series.  
-    4. Change the scope of your analysis using the :point_left: sidebar filters.
+    3. Change the scope of your analysis using the :point_left: sidebar filters.
     
-    ## Upload your EM-DAT file
     """,
     "metric": """
         The Metric View page displays _aggregated statistics_ for the main
