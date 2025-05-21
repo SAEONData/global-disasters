@@ -1,6 +1,9 @@
+
+version: '3.9'
+
 services:
-  em-view:
-    container_name: global-disasters-app
+  global-disasters:
+    container_name: global-disasters
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,10 +12,10 @@ services:
     ports:
       - "8501:8501"
     restart: unless-stopped
-    volumes:
-      - .:/app:cached
     environment:
       STREAMLIT_SERVER_PORT: 8501
+      STREAMLIT_SERVER_ADDRESS: localhost
       STREAMLIT_SERVER_HEADLESS: "true"
       STREAMLIT_SERVER_ENABLECORS: "false"
       STREAMLIT_SERVER_ENABLEXSRFPROTECTION: "false"
+      STREAMLIT_SERVER_BASEURLPATH: global-disasters
