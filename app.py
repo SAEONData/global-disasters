@@ -20,7 +20,7 @@ def init_config() -> None:
     )
 
     # Logo
-    st.logo("images/logo.png")
+    st.logo("images/saeon_logo.png")
 
     # Page setup
     home_page = st.Page(
