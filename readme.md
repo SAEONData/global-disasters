@@ -1,9 +1,9 @@
 
-# EM-VIEW: A Community Dashboard for your EM-DAT Data
+# EM-VIEW: A Community Dashboard for EM-DAT Data
 
 ![Preview](images/emview_preview.png)
 
-**EM-VIEW** is a [Streamlit](https://streamlit.io/) web application designed to visualize 
+**EM-VIEW** is a [Streamlit](https://streamlit.io/) web application designed to visualize
 the [EM-DAT International Disaster Database](https://www.emdat.be/) XLSX datasets.
 
 The dashboard features multiple analytical views:
@@ -23,6 +23,7 @@ You can download EM-DAT data by registering at the
 > 🧾 **This repository is an adaptation of an original open-source EM-VIEW implementation**  
 by the EM-DAT team. The initial version was developed under the EM-DAT project with support from USAID.  
 SAEON (South African Environmental Observation Network) contributed modifications to:
+
 - Adapt the interface for local/regional analysis
 - Introduce PostgreSQL as a backend source
 - Add Docker and Dev Container support for streamlined deployment
@@ -35,11 +36,13 @@ We do **not claim authorship of the original codebase** — only the enhancement
 
 This project is fully configured for use with **Visual Studio Code + Dev Containers**.
 
-### ✅ Requirements:
+### ✅ Requirements
+
 - Docker (or Podman) installed
 - VSCode + Dev Containers extension
 
-### ▶️ To start:
+### ▶️ To start
+
 1. Open the folder in VSCode
 2. Reopen in Dev Container when prompted
 3. Once container is ready, run:
