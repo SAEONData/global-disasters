@@ -1,30 +1,30 @@
-#-----------------------Multi state build-------------------------------
-FROM python:3.12-slim AS base
+
+FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    curl \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+
+RUN apt-get update && apt-get install -y build-essential libpq-dev && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
+RUN addgroup --system streamlitgrp && adduser --system --ingroup streamlitgrp globaldis 
     
 COPY . .
 
-FROM python:3.12-slim AS runner
+RUN chown -R globaldis:streamlitgrp /app
 
-WORKDIR /app
-
-COPY --from=base /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
-
-COPY --from=base /app .
-
-RUN adduser --disabled-password --gecos "" globaldis && chown -R globaldis /app
 USER globaldis
+
+ENV STREAMLIT_SERVER_PORT=8501
+ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
+ENV STREAMLIT_SERVER_HEADLESS=true
+ENV STREAMLIT_SERVER_ENABLECORS=false
+ENV STREAMLIT_SERVER_ENABLEXSRFPROTECTION=false
+ENV STREAMLIT_SERVER_BASEURLPATH=global-disasters
 
 EXPOSE 8501
 
