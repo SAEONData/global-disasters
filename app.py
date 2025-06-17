@@ -6,10 +6,10 @@ from utils.filters import init_sidebar_filters
 def init_config() -> None:
     """Initialize the application.
     """
-    # Shared page config
+    
     st.set_page_config(
         page_title="Global Disaster Risk Dashboard",
-        page_icon=":material/globe:",
+        page_icon="/images/saeon.svg",
         layout='wide',
         menu_items={
             'Get Help': 'https://doc.emdat.be/',
